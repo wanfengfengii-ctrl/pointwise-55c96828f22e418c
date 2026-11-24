@@ -1,0 +1,14 @@
+{
+  "recording_id": "shift-02-rescue",
+  "volume_tag": "coil-02",
+  "outlets": {
+    "main": {
+      "frames": [
+        {"kind": "P", "hex": "0cff7f", "crc32": 2781196713},
+        {"kind": "A", "hex": "0700ff", "crc32": 3607896090}
+      ],
+      "end": true
+    },
+    "backup": {"frames": [{"kind": "P", "hex": "0cff7f", "crc32": 2781196713}], "end": true}
+  }
+}

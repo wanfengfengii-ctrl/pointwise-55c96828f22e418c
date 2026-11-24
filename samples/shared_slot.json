@@ -1,0 +1,15 @@
+{
+  "slot_id": "carrier-3",
+  "jobs": [
+    {"job_id": "X", "volume_tag": "coil-x", "length": 1},
+    {"job_id": "Y", "volume_tag": "coil-y", "length": 1}
+  ],
+  "members": [
+    {"job_id": "X", "recording_id": "rx", "main": {"kind": "A", "hex": "07", "crc32": 1281784366}, "backup": {"frames": [{"kind": "P", "hex": "0c", "crc32": 3686048678}], "end": true}},
+    {"job_id": "Y", "recording_id": "ry", "main": {"kind": "A", "hex": "09", "crc32": 2883475241}, "backup": {"frames": [{"kind": "P", "hex": "0c", "crc32": 3686048678}], "end": true}}
+  ],
+  "rewrites": {
+    "changed": {"kind": "A", "hex": "0a", "crc32": 852952723},
+    "same": {"kind": "A", "hex": "09", "crc32": 2883475241}
+  }
+}

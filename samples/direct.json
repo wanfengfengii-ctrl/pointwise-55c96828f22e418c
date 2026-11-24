@@ -1,0 +1,8 @@
+{
+  "recording_id": "shift-01-direct",
+  "volume_tag": "coil-01",
+  "outlets": {
+    "main": {"frames": [{"kind": "A", "hex": "07", "crc32": 1281784366}], "end": true},
+    "backup": {"frames": [{"kind": "B", "hex": "0b", "crc32": 1171273221}], "end": true}
+  }
+}
