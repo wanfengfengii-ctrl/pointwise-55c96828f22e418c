@@ -1,7 +1,8 @@
 from enum import StrEnum
 
+from capture.shared import SharedSlotStore, query_shared_release, release_shared_slot
 from device.replay_state import ReplayState
-from device.slot import SlotReceipt, SlotState
+from device.slot import Outlet, SlotReceipt, SlotState
 
 
 class ReleaseOutcome(StrEnum):
@@ -19,6 +20,9 @@ def query_release(connection, receipt: SlotReceipt) -> SlotState:
 
 
 def release_slot(connection, receipt: SlotReceipt, *, fault=None) -> ReleaseOutcome:
+    if (receipt.outlet is Outlet.MAIN
+            and SharedSlotStore(connection).job_slots(receipt.job_id) is not None):
+        raise ValueError('a shared carrier slot cannot be released through the normal outlet')
     replay = ReplayState(connection)
     fault = ReleaseFault(fault) if fault is not None else None
     state = replay.lookup_release(receipt)

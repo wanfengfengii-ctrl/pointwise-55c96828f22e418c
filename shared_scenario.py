@@ -131,6 +131,26 @@ def exercise(root, sample, variation, expected_b):
     return result
 
 
+def stop_source(root, sample):
+    """Read every signed volume by its number after the field database is gone."""
+    field = root / "field.sqlite"
+    if field.exists():
+        field.unlink()
+    offline = ArchiveStore(root / "archive.sqlite")
+    volumes = []
+    for job in sample["jobs"]:
+        volume = read(offline, f"VOL-{job['job_id']}")
+        reads = [source.to_data() for tape in volume.provenance for source in tape.sources]
+        volumes.append({
+            "number": volume.number,
+            "a": volume.a.hex(),
+            "b": volume.b.hex(),
+            "first_receipt": volume.receipt.receipt_id,
+            "reads": reads,
+        })
+    return volumes
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=("fixture", "verify", "demo"))
@@ -143,10 +163,24 @@ def main():
     variants = ("changed", "same") if mode == "verify" else ("changed",)
     for variant in variants:
         with TemporaryDirectory(prefix="shared-slot-") as directory:
-            volumes = exercise(Path(directory), sample, variant, expected[variant])
-        print("POINTWISE_SCENARIO " + json.dumps({"case_id": f"shared_slot.{variant}",
-                                                  "expected_b": {"X": "0b", "Y": expected[variant]},
-                                                  "offline": volumes}, sort_keys=True))
+            root = Path(directory)
+            volumes = exercise(root, sample, variant, expected[variant])
+            pickup = stop_source(root, sample)
+        observation = {
+            "case_id": f"shared_slot.{variant}",
+            "expected_b": {"X": "0b", "Y": expected[variant]},
+            "offline": volumes,
+            "stop_source": pickup,
+        }
+        if mode == "demo":
+            observation["oracle"] = "按卷号 VOL-X、VOL-Y 领取；B 分别为 0B 与 06（等值改写为 09 时为 05）。"
+            observation["code_paths"] = [
+                "capture/shared.py", "capture/intake.py", "capture/custody.py",
+                "device/recording.py", "device/release.py", "decision/completeness.py",
+                "decision/equations.py", "decision/recovery.py", "decision/provenance.py",
+                "archive/readback.py",
+            ]
+        print("POINTWISE_SCENARIO " + json.dumps(observation, ensure_ascii=False, sort_keys=True))
 
 
 if __name__ == "__main__":

@@ -7,6 +7,10 @@ from pathlib import Path
 from device.position import OutletPosition
 from device.replay_state import ReplayFrame, ReplayOutlet, ReplayState
 from device.slot import Outlet, SlotReceipt
+from capture.shared import (
+    SharedSlotStore, attach_shared_slot, read_shared_member, rewrite_shared_member,
+    shared_member_evidence,
+)
 from jobs.lifecycle import JobLifecycle
 from jobs.registration import get_job
 
@@ -94,6 +98,9 @@ def attach_recording(connection, job_id, recording):
 
 
 def read_current(connection, job_id, outlet) -> RecordedFragment | None:
+    if (Outlet(outlet) is Outlet.MAIN
+            and SharedSlotStore(connection).job_slots(job_id) is not None):
+        return None
     current = ReplayState(connection).read_current(job_id, Outlet(outlet))
     if current is None:
         return None
@@ -103,3 +110,10 @@ def read_current(connection, job_id, outlet) -> RecordedFragment | None:
 
 def recording_status(connection, job_id) -> RecordingStatus:
     return RecordingStatus(*ReplayState(connection).status(job_id))
+
+
+__all__ = [
+    'RecordedFragment', 'RecordingStatus', 'attach_recording', 'attach_shared_slot',
+    'read_current', 'read_shared_member', 'recording_status', 'rewrite_shared_member',
+    'shared_member_evidence',
+]

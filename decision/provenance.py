@@ -11,9 +11,11 @@ class EvidenceSource:
     receipt: SlotReceipt
     volume_tag: str
     kind: FragmentKind
+    slot_id: str | None = None
+    write_id: str | None = None
 
     def to_data(self):
-        return {
+        data = {
             'job_id': self.receipt.job_id,
             'recording_id': self.receipt.recording_id,
             'outlet': self.receipt.outlet.value,
@@ -21,11 +23,17 @@ class EvidenceSource:
             'volume_tag': self.volume_tag,
             'kind': self.kind.value,
         }
+        if self.slot_id is not None:
+            data['slot_id'] = self.slot_id
+        if self.write_id is not None:
+            data['write_id'] = self.write_id
+        return data
 
     @classmethod
     def from_data(cls, data):
         receipt = SlotReceipt(data['job_id'], data['recording_id'], Outlet(data['outlet']), data['ordinal'])
-        return cls(receipt, data['volume_tag'], FragmentKind(data['kind']))
+        return cls(receipt, data['volume_tag'], FragmentKind(data['kind']),
+                   data.get('slot_id'), data.get('write_id'))
 
 
 @dataclass(frozen=True)
@@ -48,8 +56,9 @@ def build_provenance(tapes: RecoveredTapes) -> tuple[TapeProvenance, ...]:
     provenance = []
     for side in TapeSide:
         support = tapes.support_for(side)
-        sources = tuple(EvidenceSource(fragment.receipt, fragment.volume_tag, fragment.kind)
-                        for fragment in support)
+        sources = tuple(EvidenceSource(record.receipt, record.fragment.volume_tag,
+                                       record.fragment.kind, record.slot_id, record.write_id)
+                        for record in support)
         mode = 'direct' if len(sources) == 1 else 'recovered'
         provenance.append(TapeProvenance(side, mode, sources))
     return tuple(provenance)

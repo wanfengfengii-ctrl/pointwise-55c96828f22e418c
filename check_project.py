@@ -1,6 +1,15 @@
-"""Run this project's full unittest suite from the repository root."""
+"""Run this project's full unittest suite and the shared-slot scenario checks."""
+import subprocess
 import sys
 import unittest
+
+
+def run_shared_scenario():
+    result = subprocess.run(
+        [sys.executable, '-B', 'shared_scenario.py', 'verify'],
+        check=False,
+    )
+    return result.returncode == 0
 
 
 def main():
@@ -23,7 +32,9 @@ def main():
           f'expected_failures={len(result.expectedFailures)} '
           f'unexpected_successes={len(result.unexpectedSuccesses)} '
           f'result={"PASS" if successful else "FAIL"}')
-    return 0 if successful else 1
+    shared_ok = run_shared_scenario()
+    print(f'SHARED SCENARIO result={"PASS" if shared_ok else "FAIL"}')
+    return 0 if successful and shared_ok else 1
 
 
 if __name__ == '__main__':

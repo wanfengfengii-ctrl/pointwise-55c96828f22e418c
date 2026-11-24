@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
+from capture.custody import CustodyRecord
 from capture.evidence import CustodySnapshot
-from capture.validation import FragmentKind, ValidatedFragment
+from capture.validation import FragmentKind
 
 
 class ConflictingEvidence(ValueError):
@@ -10,9 +11,9 @@ class ConflictingEvidence(ValueError):
 
 @dataclass(frozen=True)
 class ConstraintSet:
-    a: ValidatedFragment | None
-    b: ValidatedFragment | None
-    parity: ValidatedFragment | None
+    a: CustodyRecord | None
+    b: CustodyRecord | None
+    parity: CustodyRecord | None
 
 
 def xor_bytes(left: bytes, right: bytes) -> bytes:
@@ -22,9 +23,9 @@ def xor_bytes(left: bytes, right: bytes) -> bytes:
 def collect_constraints(snapshot: CustodySnapshot) -> ConstraintSet:
     selected = {}
     for record in sorted(snapshot.records, key=lambda item: item.receipt.sort_key()):
-        fragment = record.fragment
-        previous = selected.setdefault(fragment.kind, fragment)
-        if previous.payload != fragment.payload:
-            raise ConflictingEvidence(f'conflicting {fragment.kind} fragments')
+        kind = record.fragment.kind
+        previous = selected.setdefault(kind, record)
+        if previous.fragment.payload != record.fragment.payload:
+            raise ConflictingEvidence(f'conflicting {kind} fragments')
     return ConstraintSet(selected.get(FragmentKind.A), selected.get(FragmentKind.B),
                          selected.get(FragmentKind.P))

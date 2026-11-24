@@ -3,6 +3,7 @@ from enum import StrEnum
 
 from capture.custody import CustodyRecord, CustodyState, CustodyStore
 from capture.reopen import resume_release
+from capture.shared import SharedSlotStore, accept_shared_member
 from capture.validation import InvalidFragment, validate_fragment
 from device.recording import read_current, recording_status
 from device.release import ReleaseFault
@@ -35,6 +36,11 @@ def step(connection, job_id: str, outlet, receipt: SlotReceipt | None = None,
     if receipt is not None and (not isinstance(receipt, SlotReceipt)
                                 or receipt.job_id != job_id or receipt.outlet != outlet):
         raise InvalidFragment('receipt belongs to another job or outlet')
+    if SharedSlotStore(connection).job_slots(job_id) is not None:
+        if outlet is Outlet.MAIN:
+            raise InvalidFragment('a shared carrier member is not a normal main slot')
+        if receipt is not None and receipt.outlet is Outlet.MAIN:
+            raise InvalidFragment('a shared carrier member is not a normal main slot')
     store = CustodyStore(connection)
     original = None if receipt is None else store.get(receipt)
     if original is None:

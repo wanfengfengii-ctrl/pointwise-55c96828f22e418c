@@ -60,6 +60,8 @@ class ReplayState:
                 FOREIGN KEY (job_id, outlet) REFERENCES replay_outlets (job_id, outlet)
             );
         ''')
+        from capture.shared import SharedSlotStore
+        SharedSlotStore(self.connection).initialize()
 
     def attach(self, job_id, recording_id, fingerprint, outlets, check_attachment):
         self.connection.execute('BEGIN IMMEDIATE')

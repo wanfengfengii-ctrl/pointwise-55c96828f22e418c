@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from capture.validation import ValidatedFragment
+from capture.custody import CustodyRecord
 from decision.equations import ConflictingEvidence, ConstraintSet, xor_bytes
 from jobs.identity import TapeSide
 
@@ -13,21 +13,25 @@ class MissingEvidence(ValueError):
 class RecoveredTapes:
     a: bytes
     b: bytes
-    a_support: tuple[ValidatedFragment, ...]
-    b_support: tuple[ValidatedFragment, ...]
+    a_support: tuple[CustodyRecord, ...]
+    b_support: tuple[CustodyRecord, ...]
 
     def support_for(self, side: TapeSide):
         return self.a_support if side is TapeSide.A else self.b_support
 
 
+def _payload(record: CustodyRecord) -> bytes:
+    return record.fragment.payload
+
+
 def recover_tapes(constraints: ConstraintSet) -> RecoveredTapes:
     a, b, parity = constraints.a, constraints.b, constraints.parity
     if a is not None and b is not None:
-        if parity is not None and xor_bytes(a.payload, b.payload) != parity.payload:
+        if parity is not None and xor_bytes(_payload(a), _payload(b)) != _payload(parity):
             raise ConflictingEvidence('parity disagrees with the direct tapes')
-        return RecoveredTapes(a.payload, b.payload, (a,), (b,))
+        return RecoveredTapes(_payload(a), _payload(b), (a,), (b,))
     if parity is not None and a is not None:
-        return RecoveredTapes(a.payload, xor_bytes(a.payload, parity.payload), (a,), (a, parity))
+        return RecoveredTapes(_payload(a), xor_bytes(_payload(a), _payload(parity)), (a,), (a, parity))
     if parity is not None and b is not None:
-        return RecoveredTapes(xor_bytes(b.payload, parity.payload), b.payload, (b, parity), (b,))
+        return RecoveredTapes(xor_bytes(_payload(b), _payload(parity)), _payload(b), (b, parity), (b,))
     raise MissingEvidence('compatible fragments do not uniquely determine A and B')
